@@ -4,14 +4,13 @@ import (
 	"fmt"
 
 	gotmux "github.com/jubnzv/go-tmux"
-	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	"os"
 )
 
 type sessionConfig struct {
-    Name string `yaml:"name"`
-	Cwd string `yaml:"cwd"`
+	Name    string   `yaml:"name"`
+	Cwd     string   `yaml:"cwd"`
 	Windows []string `yaml:"windows"`
 }
 
@@ -29,10 +28,9 @@ func load(config sessionConfig) (*gotmux.Session, error) {
 		Name: config.Name, StartDirectory: config.Cwd,
 	}
 
-
 	for idx, window := range config.Windows {
-		window := gotmux.Window {
-			Id: idx,
+		window := gotmux.Window{
+			Id:   idx,
 			Name: window,
 		}
 		window.StartDirectory = config.Cwd
@@ -56,46 +54,30 @@ func load(config sessionConfig) (*gotmux.Session, error) {
 }
 
 func main() {
-	loadCmd := &cobra.Command{
-		Use:   "load",
-		Short: "short",
-		Long:  "long",
-		Run: func(cmd *cobra.Command, args []string) {
-			if len(args) < 1 {
-				panic("need a config file name")
-			}
-			fd, err := os.Open(args[0])
-			if err != nil {
-				panic(err)
-			}
-			var config sessionConfig
-			err = yaml.NewDecoder(fd).Decode(&config)
-			if err != nil {
-				panic(err)
-			}
-			sess, err := load(config)
-
-			if err != nil {
-				panic(err)
-			}
-			fmt.Println(sess)
-			// err = sess.AttachSession()
-			// if err != nil {
-			// 	panic(err)
-			// }
-
-		},
+	var filename string
+	if len(os.Args) > 1 {
+		filename = os.Args[1]	
+	} else {
+		filename = ".tmuxify.yml"
 	}
-	rootCmd := &cobra.Command{
-		Use:   "tmuxify",
-		Short: "short",
-		Long:  "long",
-		Run: func(cmd *cobra.Command, args []string) {
-
-		},
-	}
-	rootCmd.AddCommand(loadCmd)
-	if err := rootCmd.Execute(); err != nil {
+	
+	fd, err := os.Open(filename)
+	if err != nil {
 		panic(err)
 	}
+	var config sessionConfig
+	err = yaml.NewDecoder(fd).Decode(&config)
+	if err != nil {
+		panic(err)
+	}
+	sess, err := load(config)
+
+	if err != nil {
+		panic(err)
+	}
+	err = sess.AttachSession()
+	if err != nil {
+		panic(err)
+	}
+
 }
